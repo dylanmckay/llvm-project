@@ -20,6 +20,7 @@
 
 #include "AVR.h"
 #include "AVRTargetObjectFile.h"
+#include "AVRTargetTransformInfo.h"
 #include "MCTargetDesc/AVRMCTargetDesc.h"
 #include "TargetInfo/AVRTargetInfo.h"
 
@@ -91,6 +92,11 @@ const AVRSubtarget *AVRTargetMachine::getSubtargetImpl() const {
 
 const AVRSubtarget *AVRTargetMachine::getSubtargetImpl(const Function &) const {
   return &SubTarget;
+}
+
+TargetTransformInfo
+AVRTargetMachine::getTargetTransformInfo(const Function &F) {
+  return TargetTransformInfo(AVRTTIImpl(this, F));
 }
 
 //===----------------------------------------------------------------------===//
