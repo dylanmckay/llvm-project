@@ -9,11 +9,13 @@
 #include "AVR.h"
 #include "CommonArgs.h"
 #include "InputInfo.h"
+#include "clang/Basic/AVR.h"
 #include "clang/Driver/Compilation.h"
 #include "clang/Driver/DriverDiagnostic.h"
 #include "clang/Driver/Options.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringSwitch.h"
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Option/ArgList.h"
@@ -103,6 +105,7 @@ void AVR::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   // Compute information about the target AVR.
   std::string CPU = getCPUName(Args, getToolChain().getTriple());
   llvm::Optional<StringRef> FamilyName = GetMcuFamilyName(CPU);
+  llvm::Optional<clang::targets::avr::MCUInfo*> McuInfo = targets::avr::MCUInfo::find(CPU);
 
   std::string Linker = getToolChain().GetProgramPath(getShortName());
   ArgStringList CmdArgs;
@@ -117,6 +120,16 @@ void AVR::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   // Add library search paths before we specify libraries.
   Args.AddAllArgs(CmdArgs, options::OPT_L);
   getToolChain().AddFilePathLibArgs(Args, CmdArgs);
+
+  if (McuInfo.hasValue()) {
+    const clang::targets::avr::MCUInfo &Info = *McuInfo.getValue();
+
+    if (Info.getSectionAddressData().hasValue()) {
+      std::string DataSectionArg = std::string("-Tdata=") + llvm::utohexstr(Info.getSectionAddressData().getValue());
+      llvm::outs() << "data section argument: '" << DataSectionArg << "'\n";
+      CmdArgs.push_back(Args.MakeArgString(DataSectionArg));
+    }
+  }
 
   // If the family name is known, we can link with the device-specific libgcc.
   // Without it, libgcc will simply not be linked. This matches avr-gcc
