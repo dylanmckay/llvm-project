@@ -13,6 +13,7 @@
 #include "clang/Driver/DriverDiagnostic.h"
 #include "clang/Driver/Options.h"
 #include "llvm/ADT/Optional.h"
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringSwitch.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/SubtargetFeature.h"
@@ -34,6 +35,13 @@ llvm::Optional<StringRef> GetMcuFamilyName(StringRef MCU) {
       .Case("atmega328", Optional<StringRef>("avr5"))
       .Case("atmega328p", Optional<StringRef>("avr5"))
       .Default(Optional<StringRef>());
+}
+
+llvm::Optional<unsigned> GetMcuSectionAddressData(StringRef MCU) {
+  return llvm::StringSwitch<llvm::Optional<unsigned>>(MCU)
+      .Case("atmega328", Optional<unsigned>(0x800100))
+      .Case("atmega328p", Optional<unsigned>(0x800100))
+      .Default(Optional<unsigned>());
 }
 
 const StringRef PossibleAVRLibcLocations[] = {
@@ -103,6 +111,7 @@ void AVR::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   // Compute information about the target AVR.
   std::string CPU = getCPUName(Args, getToolChain().getTriple());
   llvm::Optional<StringRef> FamilyName = GetMcuFamilyName(CPU);
+  llvm::Optional<unsigned> SectionAddressData = GetMcuSectionAddressData(CPU);
 
   std::string Linker = getToolChain().GetProgramPath(getShortName());
   ArgStringList CmdArgs;
@@ -117,6 +126,17 @@ void AVR::Linker::ConstructJob(Compilation &C, const JobAction &JA,
   // Add library search paths before we specify libraries.
   Args.AddAllArgs(CmdArgs, options::OPT_L);
   getToolChain().AddFilePathLibArgs(Args, CmdArgs);
+
+  if (SectionAddressData.hasValue()) {
+    std::string DataSectionArg = std::string("-Tdata=0x") +
+                                 llvm::utohexstr(SectionAddressData.getValue());
+    CmdArgs.push_back(Args.MakeArgString(DataSectionArg));
+  } else {
+    // We do not have an entry for this CPU in the address mapping table yet.
+    getToolChain().getDriver().Diag(
+        diag::warn_drv_avr_linker_section_addresses_not_implemented)
+        << CPU;
+  }
 
   // If the family name is known, we can link with the device-specific libgcc.
   // Without it, libgcc will simply not be linked. This matches avr-gcc
