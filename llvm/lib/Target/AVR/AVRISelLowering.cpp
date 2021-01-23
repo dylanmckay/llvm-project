@@ -334,6 +334,18 @@ SDValue AVRTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const {
     llvm_unreachable("Invalid shift opcode");
   }
 
+  // Optimize int8 shifts.
+  if (VT.getSizeInBits() == 8 && ShiftAmount == 7) {
+    if (Op.getOpcode() == ISD::SHL) {
+      Victim = DAG.getNode(AVRISD::LSL7, dl, VT, Victim);
+    } else if (Op.getOpcode() == ISD::SRL) {
+      Victim = DAG.getNode(AVRISD::LSR7, dl, VT, Victim);
+    } else if (Op.getOpcode() == ISD::SRA) {
+      Victim = DAG.getNode(AVRISD::ASR7, dl, VT, Victim);
+    }
+    ShiftAmount = 0;
+  }
+
   while (ShiftAmount--) {
     Victim = DAG.getNode(Opc8, dl, VT, Victim);
   }

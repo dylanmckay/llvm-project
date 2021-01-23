@@ -59,6 +59,9 @@ def AVRlsr : SDNode<"AVRISD::LSR", SDTIntUnaryOp>;
 def AVRrol : SDNode<"AVRISD::ROL", SDTIntUnaryOp>;
 def AVRror : SDNode<"AVRISD::ROR", SDTIntUnaryOp>;
 def AVRasr : SDNode<"AVRISD::ASR", SDTIntUnaryOp>;
+def AVRlsl7 : SDNode<"AVRISD::LSL7", SDTIntUnaryOp>;
+def AVRlsr7 : SDNode<"AVRISD::LSR7", SDTIntUnaryOp>;
+def AVRasr7 : SDNode<"AVRISD::ASR7", SDTIntUnaryOp>;
 
 // Pseudo shift nodes for non-constant shift amounts.
 def AVRlslLoop : SDNode<"AVRISD::LSLLOOP", SDTIntShiftOp>;
@@ -1663,12 +1666,22 @@ Defs = [SREG] in
                       "lslw\t$rd",
                       [(set i16:$rd, (AVRlsl i16:$src)), (implicit SREG)]>;
 
+  def LSLB7Rd : Pseudo<(outs GPR8:$rd),
+                       (ins GPR8:$src),
+                       "lslb7\t$rd",
+                       [(set i8:$rd, (AVRlsl7 i8:$src)), (implicit SREG)]>;
+
   def LSRRd : FRd<0b1001,
                   0b0100110,
                   (outs GPR8:$rd),
                   (ins GPR8:$src),
                   "lsr\t$rd",
                   [(set i8:$rd, (AVRlsr i8:$src)), (implicit SREG)]>;
+
+  def LSRB7Rd : Pseudo<(outs GPR8:$rd),
+                       (ins GPR8:$src),
+                       "lsrb7\t$rd",
+                       [(set i8:$rd, (AVRlsr7 i8:$src)), (implicit SREG)]>;
 
   def LSRWRd : Pseudo<(outs DREGS:$rd),
                       (ins DREGS:$src),
@@ -1681,6 +1694,11 @@ Defs = [SREG] in
                   (ins GPR8:$src),
                   "asr\t$rd",
                   [(set i8:$rd, (AVRasr i8:$src)), (implicit SREG)]>;
+
+  def ASRB7Rd : Pseudo<(outs GPR8:$rd),
+                       (ins GPR8:$src),
+                       "asrb7\t$rd",
+                       [(set i8:$rd, (AVRasr7 i8:$src)), (implicit SREG)]>;
 
   def ASRWRd : Pseudo<(outs DREGS:$rd),
                       (ins DREGS:$src),

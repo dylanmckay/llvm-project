@@ -50,3 +50,29 @@ define i64 @shift_i64_i64(i64 %a, i64 %b) {
   %result = shl i64 %a, %b
   ret i64 %result
 }
+
+; CHECK-LABEL: lsl_i8_7
+define i8 @lsl_i8_7(i8 %a) {
+; CHECK:      ror r24
+; CHECK-NEXT: clr r24
+; CHECK-NEXT: ror r24
+  %result = shl i8 %a, 7
+  ret i8 %result
+}
+
+; CHECK-LABEL: lsr_i8_7
+define i8 @lsr_i8_7(i8 %a) {
+; CHECK:      rol r24
+; CHECK-NEXT: clr r24
+; CHECK-NEXT: rol r24
+  %result = lshr i8 %a, 7
+  ret i8 %result
+}
+
+; CHECK-LABEL: asr_i8_7
+define i8 @asr_i8_7(i8 %a) {
+; CHECK:      lsl r24
+; CHECK-NEXT: sbc r24, r24
+  %result = ashr i8 %a, 7
+  ret i8 %result
+}
