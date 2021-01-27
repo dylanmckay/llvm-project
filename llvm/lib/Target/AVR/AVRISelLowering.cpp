@@ -334,6 +334,53 @@ SDValue AVRTargetLowering::LowerShifts(SDValue Op, SelectionDAG &DAG) const {
     llvm_unreachable("Invalid shift opcode");
   }
 
+  // Optimize 16-bit int shifts.
+  if (VT.getSizeInBits() == 16) {
+    if (4 <= ShiftAmount && ShiftAmount < 8)
+      switch (Op.getOpcode()) {
+      case ISD::SHL:
+        Victim = DAG.getNode(AVRISD::LSL4, dl, VT, Victim);
+        ShiftAmount -= 4;
+        break;
+      case ISD::SRL:
+        Victim = DAG.getNode(AVRISD::LSR4, dl, VT, Victim);
+        ShiftAmount -= 4;
+        break;
+      default:
+        break;
+      }
+    else if (8 <= ShiftAmount && ShiftAmount < 12)
+      switch (Op.getOpcode()) {
+      case ISD::SHL:
+        Victim = DAG.getNode(AVRISD::LSL8, dl, VT, Victim);
+        ShiftAmount -= 8;
+        break;
+      case ISD::SRL:
+        Victim = DAG.getNode(AVRISD::LSR8, dl, VT, Victim);
+        ShiftAmount -= 8;
+        break;
+      case ISD::SRA:
+        Victim = DAG.getNode(AVRISD::ASR8, dl, VT, Victim);
+        ShiftAmount -= 8;
+        break;
+      default:
+        break;
+      }
+    else if (12 <= ShiftAmount)
+      switch (Op.getOpcode()) {
+      case ISD::SHL:
+        Victim = DAG.getNode(AVRISD::LSL12, dl, VT, Victim);
+        ShiftAmount -= 12;
+        break;
+      case ISD::SRL:
+        Victim = DAG.getNode(AVRISD::LSR12, dl, VT, Victim);
+        ShiftAmount -= 12;
+        break;
+      default:
+        break;
+      }
+  }
+
   while (ShiftAmount--) {
     Victim = DAG.getNode(Opc8, dl, VT, Victim);
   }

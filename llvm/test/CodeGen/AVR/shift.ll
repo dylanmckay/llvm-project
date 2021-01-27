@@ -50,3 +50,93 @@ define i64 @shift_i64_i64(i64 %a, i64 %b) {
   %result = shl i64 %a, %b
   ret i64 %result
 }
+
+define i16 @lsl_i16_5(i16 %a) {
+; CHECK-LABEL: lsl_i16_5
+; CHECK:       swap r25
+; CHECK-NEXT:  swap r24
+; CHECK-NEXT:  andi r25, 240
+; CHECK-NEXT:  eor r25, r24
+; CHECK-NEXT:  andi r24, 240
+; CHECK-NEXT:  eor r25, r24
+; CHECK-NEXT:  lsl r24
+; CHECK-NEXT:  rol r25
+; CHECK-NEXT:  ret
+  %result = shl i16 %a, 5
+  ret i16 %result
+}
+
+define i16 @lsl_i16_9(i16 %a) {
+; CHECK-LABEL: lsl_i16_9
+; CHECK:       mov r25, r24
+; CHECK-NEXT:  clr r24
+; CHECK-NEXT:  lsl r24
+; CHECK-NEXT:  rol r25
+; CHECK-NEXT:  ret
+  %result = shl i16 %a, 9
+  ret i16 %result
+}
+
+define i16 @lsl_i16_13(i16 %a) {
+; CHECK-LABEL: lsl_i16_13
+; CHECK:       mov r25, r24
+; CHECK-NEXT:  swap r25
+; CHECK-NEXT:  andi r25, 240
+; CHECK-NEXT:  clr r24
+; CHECK-NEXT:  lsl r24
+; CHECK-NEXT:  rol r25
+; CHECK-NEXT:  ret
+  %result = shl i16 %a, 13
+  ret i16 %result
+}
+
+define i16 @lsr_i16_5(i16 %a) {
+; CHECK-LABEL: lsr_i16_5
+; CHECK:       swap r25
+; CHECK-NEXT:  swap r24
+; CHECK-NEXT:  andi r24, 15
+; CHECK-NEXT:  eor r24, r25
+; CHECK-NEXT:  andi r25, 15
+; CHECK-NEXT:  eor r24, r25
+; CHECK-NEXT:  lsr r25
+; CHECK-NEXT:  ror r24
+; CHECK-NEXT:  ret
+  %result = lshr i16 %a, 5
+  ret i16 %result
+}
+
+define i16 @lsr_i16_9(i16 %a) {
+; CHECK-LABEL: lsr_i16_9
+; CHECK:       mov r24, r25
+; CHECK-NEXT:  clr r25
+; CHECK-NEXT:  lsr r25
+; CHECK-NEXT:  ror r24
+; CHECK-NEXT:  ret
+  %result = lshr i16 %a, 9
+  ret i16 %result
+}
+
+define i16 @lsr_i16_13(i16 %a) {
+; CHECK-LABEL: lsr_i16_13
+; CHECK:       mov r24, r25
+; CHECK-NEXT:  swap r24
+; CHECK-NEXT:  andi r24, 15
+; CHECK-NEXT:  clr r25
+; CHECK-NEXT:  lsr r25
+; CHECK-NEXT:  ror r24
+; CHECK-NEXT:  ret
+  %result = lshr i16 %a, 13
+  ret i16 %result
+}
+
+define i16 @asr_i16_9(i16 %a) {
+; CHECK-LABEL: asr_i16_9
+; CHECK:       mov r24, r25
+; CHECK-NEXT:  lsl r25
+; CHECK-NEXT:  sbc r25, r25
+; CHECK-NEXT:  asr r25
+; CHECK-NEXT:  ror r24
+; CHECK-NEXT:  ret
+  %result = ashr i16 %a, 9
+  ret i16 %result
+}
