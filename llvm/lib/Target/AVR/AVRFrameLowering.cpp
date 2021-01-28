@@ -295,33 +295,40 @@ bool AVRFrameLowering::restoreCalleeSavedRegisters(
 
 /// Replace pseudo store instructions that pass arguments through the stack with
 /// real instructions.
-static void fixStackStores(MachineBasicBlock &MBB,
-                           MachineBasicBlock::iterator MI,
+static void fixStackStores(MachineFunction &MF,
                            const TargetInstrInfo &TII, Register FP) {
-  // Iterate through the BB until we hit a call instruction or we reach the end.
-  for (auto I = MI, E = MBB.end(); I != E && !I->isCall();) {
-    MachineBasicBlock::iterator NextMI = std::next(I);
-    MachineInstr &MI = *I;
-    unsigned Opcode = I->getOpcode();
 
-    // Only care of pseudo store instructions where SP is the base pointer.
-    if (Opcode != AVR::STDSPQRr && Opcode != AVR::STDWSPQRr) {
+  for (auto MBBI = MF.begin(), MBBE = MF.end(); MBBI != MBBE; ) {
+    MachineFunction::iterator NextMBB = std::next(MBBI);
+    MachineBasicBlock &MBB = *MBBI;
+
+    // Iterate through the BB until we hit a call instruction or we reach the end.
+    for (auto I = MBB.begin(), E = MBB.end(); I != E;) {
+      MachineBasicBlock::iterator NextMI = std::next(I);
+      MachineInstr &MI = *I;
+      unsigned Opcode = I->getOpcode();
+
+      // Only care of pseudo store instructions where SP is the base pointer.
+      if (Opcode != AVR::STDSPQRr && Opcode != AVR::STDWSPQRr) {
+        I = NextMI;
+        continue;
+      }
+
+      assert(MI.getOperand(0).getReg() == AVR::SP &&
+             "Invalid register, should be SP!");
+
+      // Replace this instruction with a regular store. Use Y as the base
+      // pointer since it is guaranteed to contain a copy of SP.
+      unsigned STOpc =
+          (Opcode == AVR::STDWSPQRr) ? AVR::STDWPtrQRr : AVR::STDPtrQRr;
+
+      MI.setDesc(TII.get(STOpc));
+      MI.getOperand(0).setReg(FP);
+
       I = NextMI;
-      continue;
     }
 
-    assert(MI.getOperand(0).getReg() == AVR::SP &&
-           "Invalid register, should be SP!");
-
-    // Replace this instruction with a regular store. Use Y as the base
-    // pointer since it is guaranteed to contain a copy of SP.
-    unsigned STOpc =
-        (Opcode == AVR::STDWSPQRr) ? AVR::STDWPtrQRr : AVR::STDPtrQRr;
-
-    MI.setDesc(TII.get(STOpc));
-    MI.getOperand(0).setReg(FP);
-
-    I = NextMI;
+    MBBI = NextMBB;
   }
 }
 
@@ -335,7 +342,8 @@ MachineBasicBlock::iterator AVRFrameLowering::eliminateCallFramePseudoInstr(
   // function entry. Delete the call frame pseudo and replace all pseudo stores
   // with real store instructions.
   if (hasReservedCallFrame(MF)) {
-    fixStackStores(MBB, MI, TII, AVR::R29R28);
+    fixStackStores(MF, TII, AVR::R29R28);
+
     return MBB.erase(MI);
   }
 
@@ -366,7 +374,7 @@ MachineBasicBlock::iterator AVRFrameLowering::eliminateCallFramePseudoInstr(
 
       // Make sure the remaining stack stores are converted to real store
       // instructions.
-      fixStackStores(MBB, MI, TII, AVR::R31R30);
+      fixStackStores(MF, TII, AVR::R31R30);
     } else {
       assert(Opcode == TII.getCallFrameDestroyOpcode());
 
