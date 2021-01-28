@@ -570,5 +570,24 @@ unsigned AVRInstrInfo::insertIndirectBranch(MachineBasicBlock &MBB,
     return getInstSizeInBytes(MI);
 }
 
+bool AVRInstrInfo::isFrameInstr(const MachineInstr &MI) const {
+    return TargetInstrInfo::isFrameInstr(MI) ||
+      // Treat these pseudo stack store as frame instructions so that they
+      // can be expanded into real instructions and the frame pointer written
+      // out in 'fixStackStores(..)'.
+      MI.getOpcode() == AVR::STDWSPQRr || MI.getOpcode() == AVR::STDSPQRr;
+}
+
+int64_t AVRInstrInfo::getFrameSize(const MachineInstr &I) const {
+  switch(I.getOpcode()) {
+    // The pseudo stack store instructions don't actually change the frame size.
+    case AVR::STDWSPQRr:
+    case AVR::STDSPQRr:
+      return 0;
+    default:
+      return TargetInstrInfo::getFrameSize(I);
+  }
+}
+
 } // end of namespace llvm
 

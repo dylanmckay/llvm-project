@@ -193,7 +193,7 @@ public:
   unsigned getCallFrameDestroyOpcode() const { return CallFrameDestroyOpcode; }
 
   /// Returns true if the argument is a frame pseudo instruction.
-  bool isFrameInstr(const MachineInstr &I) const {
+  virtual bool isFrameInstr(const MachineInstr &I) const {
     return I.getOpcode() == getCallFrameSetupOpcode() ||
            I.getOpcode() == getCallFrameDestroyOpcode();
   }
@@ -211,7 +211,7 @@ public:
   /// to the frame setup instruction. It occurs in the calls that involve
   /// inalloca arguments. This function reports only the size of the frame part
   /// that is set up between the frame setup and destroy pseudo instructions.
-  int64_t getFrameSize(const MachineInstr &I) const {
+  virtual int64_t getFrameSize(const MachineInstr &I) const {
     assert(isFrameInstr(I) && "Not a frame instruction");
     assert(I.getOperand(0).getImm() >= 0);
     return I.getOperand(0).getImm();

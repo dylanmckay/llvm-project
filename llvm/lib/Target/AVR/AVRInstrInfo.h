@@ -112,6 +112,10 @@ public:
                                 const DebugLoc &DL,
                                 int64_t BrOffset,
                                 RegScavenger *RS) const override;
+
+  bool isFrameInstr(const MachineInstr &MI) const override;
+  int64_t getFrameSize(const MachineInstr &I) const override;
+
 private:
   const AVRRegisterInfo RI;
 };
